@@ -4,3 +4,11 @@
 
 # LangGraph
 .langgraph_api/
+
+# env files
+.env
+.env.*
+
+# scratch files
+/scratch/*
+
