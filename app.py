@@ -2,23 +2,38 @@ import streamlit as st
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableParallel, RunnableBranch, RunnableLambda
+from pydantic import BaseModel, Field
+from typing import Optional
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
+# model setup
+model = ChatGoogleGenerativeAI(model="gemini-3.7-flash")
+parser = StrOutputParser()
+
+
+# pydantic schema
+class JobApplication(BaseModel):
+    name: str = "Unknown"
+    experience: Optional[int] = None
+    skills: str = Field(description="Key skills mentioned by the candidate")
+    expected_role: str = Field(description="The job role the candidate is applying for")
+
+structured_model = model.with_structured_output(JobApplication)
+
+# streamlit UI
 st.set_page_config(page_title="AI Chatbot")
 
 st.title("AI Chatbot Version: 1.0")
 st.markdown("LangChain Chatbot using RunnableBranch & RunnableParallel")
 
-model = ChatGoogleGenerativeAI(model="gemini-3.7-flash")
-
-
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Display chat messages 
+# display chat messages
 for msg in st.session_state.chat_history:
     role = "assistant" if isinstance(msg, AIMessage) else "user"
     with st.chat_message(role):
@@ -33,7 +48,7 @@ with st.sidebar:
         for msg in st.session_state.chat_history:
             role = "AI" if isinstance(msg, AIMessage) else "Human"
             st.markdown(f"**{role}:** {msg.content}")
-            
+
     if st.button("Clear Chat"):
         st.session_state.chat_history = []
         st.rerun()
