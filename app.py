@@ -24,6 +24,71 @@ class JobApplication(BaseModel):
 
 structured_model = model.with_structured_output(JobApplication)
 
+
+# parallel chain - summary + questions
+prompt_summary = PromptTemplate(
+    template="Summarize the following text in 3 short lines:\n{input}",
+    input_variables=["input"]
+)
+prompt_questions = PromptTemplate(
+    template="Write 3 simple questions from the following text:\n{input}",
+    input_variables=["input"]
+)
+
+parallel_chain = RunnableParallel(
+    {
+        "Summary": prompt_summary | model | parser,
+        "Questions": prompt_questions | model | parser
+    }
+)
+
+
+# general conversation chain
+general_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful AI assistant."),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{input}")
+])
+general_chain = general_prompt | model | parser
+
+
+# classifier chain
+classify_prompt = PromptTemplate(
+    template=(
+        "Classify the user's intent into ONE word:\n"
+        "- 'analyze' (wants summary or questions about a text)\n"
+        "- 'extract' (wants to extract job/resume info)\n"
+        "- 'general' (anything else)\n\n"
+        "User input: {input}"
+    ),
+    input_variables=["input"]
+)
+classifier_chain = classify_prompt | model | parser
+
+
+# RunnableBranch router
+branch = RunnableBranch(
+    (
+        lambda x: "analyze" in x["topic"].lower(),
+        RunnableLambda(lambda x: (
+            lambda r: f"**Summary:**\n{r['Summary']}\n\n**Questions:**\n{r['Questions']}"
+        )(parallel_chain.invoke({"input": x["input"]}))
+        )
+    ),
+    (
+        lambda x: "extract" in x["topic"].lower(),
+        RunnableLambda(lambda x: (
+            lambda r: f"**Extracted Job Application:**\n\n- **Name:** {r.name}\n- **Experience:** {r.experience} years\n- **Skills:** {r.skills}\n- **Expected Role:** {r.expected_role}"
+        )(structured_model.invoke(x["input"]))
+        )
+    ),
+    RunnableLambda(lambda x: general_chain.invoke({
+        "input": x["input"],
+        "chat_history": x["chat_history"]
+    }))
+)
+
+
 # streamlit UI
 st.set_page_config(page_title="AI Chatbot")
 
@@ -65,12 +130,17 @@ if user_input:
 
     with st.spinner("Thinking..."):
         try:
-            chain = model | StrOutputParser()
-            result = chain.invoke(st.session_state.chat_history)
-            
+            topic = classifier_chain.invoke({"input": user_input})
+
+            result = branch.invoke({
+                "topic": topic,
+                "input": user_input,
+                "chat_history": st.session_state.chat_history
+            })
+
             st.session_state.chat_history.append(AIMessage(content=result))
             with st.chat_message("assistant"):
-                st.write(result)
-                
+                st.markdown(result)
+
         except Exception as e:
             st.error(f"Failed to generate response. Please check your connection or API key. Error: {e}")
