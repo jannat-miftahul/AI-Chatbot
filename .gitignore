@@ -12,3 +12,14 @@
 # scratch files
 /scratch/*
 
+# pycache
+__pycache__/*
+*.pyc
+*.pyo
+
+# venv
+venv/*
+.venv/*
+
+# Streamlit cache
+.streamlit/
