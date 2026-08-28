@@ -51,3 +51,13 @@ schemas.py   # Pydantic schema
 | Programming | `Write a Python function to reverse a string` |
 | Math        | `Solve: 2x + 5 = 15`                          |
 | General     | `What is machine learning?`                   |
+
+## Demo
+
+**Chatbot UI**
+
+![Chatbot UI](demo/chatbot_ui.png)
+
+**General Chat**
+
+![General Chat](demo/general_chat.png)
