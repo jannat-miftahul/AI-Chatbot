@@ -4,9 +4,9 @@ A LangChain-powered chatbot built with Streamlit and Google Gemini, demonstratin
 
 ## Features
 
-- **General Chat** — Conversational AI with memory
-- **Text Analysis** — Generates a summary and questions in parallel using `RunnableParallel`
-- **Info Extraction** — Extracts structured job application data using Pydantic via `RunnableBranch`
+- **Dynamic Routing** — Routes queries to domain-specific prompts (Programming, Math, General) using `RunnableBranch`
+- **Parallel Execution** — Generates a structured answer and summary simultaneously using `RunnableParallel`
+- **Structured Output** — Validates responses with `Pydantic` schema (`answer`, `confidence`, `category`, `keywords`)
 
 ## Tech Stack
 
@@ -15,9 +15,18 @@ A LangChain-powered chatbot built with Streamlit and Google Gemini, demonstratin
 - [Streamlit](https://streamlit.io/)
 - [Pydantic](https://docs.pydantic.dev/)
 
+## Project Structure
+
+```
+app.py       # Streamlit UI
+chatbot.py   # LangChain pipeline (RunnableBranch, RunnableParallel)
+prompts.py   # Prompt templates
+schemas.py   # Pydantic schema
+```
+
 ## Setup
 
-1. Clone the repo and install dependencies:
+1. Install dependencies:
 
     ```bash
     pip install -r requirements.txt
@@ -26,18 +35,19 @@ A LangChain-powered chatbot built with Streamlit and Google Gemini, demonstratin
 2. Create a `.env` file and add your API key:
 
     ```
-    GEMINI_API_KEY=your_key_here
+    GOOGLE_API_KEY=your_key_here
     ```
 
 3. Run the app:
+
     ```bash
     streamlit run app.py
     ```
 
 ## How to Use
 
-| Intent       | Example Prompt                                                                       |
-| ------------ | ------------------------------------------------------------------------------------ |
-| General chat | `What is machine learning?`                                                          |
-| Analyze text | `Analyze this: Deep learning is a subset of ML...`                                   |
-| Extract info | `Extract: My name is Arif, 3 years ML experience, applying for Data Scientist role.` |
+| Intent      | Example Prompt                                |
+| ----------- | --------------------------------------------- |
+| Programming | `Write a Python function to reverse a string` |
+| Math        | `Solve: 2x + 5 = 15`                          |
+| General     | `What is machine learning?`                   |
